@@ -1,9 +1,29 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using MvcMovie.Data;
+using MvcMovie.Models;
+
 var builder = WebApplication.CreateBuilder(args);
+
+//The ASP.NET Core configuration system reads the "MvcMovieContext" database connection string.
+
+//MvcMovieContext object handles the task of connecting to the database and mapping Movie objects
+//to database records. The database context is registered with the Dependency Injection container
+builder.Services.AddDbContext<MvcMovieContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("MvcMovieContext") ?? throw new InvalidOperationException("Connection string 'MvcMovieContext' not found.")));
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
+
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+
+    SeedData.Initialize(services);
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
