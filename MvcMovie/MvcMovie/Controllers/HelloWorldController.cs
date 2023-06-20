@@ -7,14 +7,18 @@ public class HelloWorldController : Controller
 {
     // public method in a controller is callable as an HTTP endpoint. In the sample above, both methods return a string. Note the comments preceding each method.
     // GET: /HelloWorld/
-    public string Index()
+    public IActionResult Index()
     {
-        return "This is my default action...";
+        return View();
     }
+
     // 
     // GET: /HelloWorld/Welcome/ 
-    public string Welcome()
+    // Requires using System.Text.Encodings.Web;
+    public IActionResult Welcome(string name, int numTimes = 1)
     {
-        return "This is the Welcome action method...";
+        ViewData["Message"] = "Hello " + name;
+        ViewData["NumTimes"] = numTimes;
+        return View();
     }
 }
