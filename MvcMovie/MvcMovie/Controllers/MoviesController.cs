@@ -1,13 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Humanizer;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.CodeAnalysis.Differencing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using MvcMovie.Data;
 using MvcMovie.Models;
+using System.Reflection.Metadata;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Model;
+using System.Security.Policy;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Dynamic;
+using System.Drawing;
 
 namespace MvcMovie.Controllers
 {
@@ -20,13 +23,47 @@ namespace MvcMovie.Controllers
         {
             _context = context;
         }
-
+        
         // GET: Movies
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string movieGenre, string searchString)
         {
-              return _context.Movie != null ? 
-                          View(await _context.Movie.ToListAsync()) :
-                          Problem("Entity set 'MvcMovieContext.Movie'  is null.");
+            if (_context.Movie == null)
+            {
+                return Problem("Entity set 'MvcMovieContext.Movie'  is null.");
+            }
+
+            //LINQ query that retrieves all the genres from the database
+            IQueryable<string> genreQuery = from m in _context.Movie
+                                            orderby m.Genre
+                                            select m.Genre;
+            var movies = from m in _context.Movie
+                         select m;
+
+            //If the searchString parameter contains a string, the movies query is modified to filter on the value of the search string
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                movies = movies.Where(s => s.Title!.Contains(searchString));
+            }
+
+            if (!string.IsNullOrEmpty(movieGenre))
+            {
+                movies = movies.Where(x => x.Genre == movieGenre);
+            }
+
+            var movieGenreVM = new MovieGenreViewModel
+            {
+                Genres = new SelectList(await genreQuery.Distinct().ToListAsync()),
+                Movies = await movies.ToListAsync()
+            };
+
+            return View(movieGenreVM);
+        }
+
+        //notUsed parameter is used to create an overload for the Index method.
+        [HttpPost]
+        public string Index(string searchString, bool notUsed)
+        {
+            return "From [HttpPost]Index: filter on " + searchString;
         }
 
         // GET: Movies/Details/5
@@ -50,6 +87,7 @@ namespace MvcMovie.Controllers
 
         // GET: Movies/Create
         //Returns the razer view html
+        //displays the initial Create form
         public IActionResult Create()
         {
             return View();
@@ -57,10 +95,15 @@ namespace MvcMovie.Controllers
 
         // POST: Movies/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.(bind attribute)
+        //handles the form post
+        //never called when there are client side validation errors
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Title,ReleaseDate,Genre,Price")] Movie movie)
+        public async Task<IActionResult> Create([Bind("Id,Title,ReleaseDate,Genre,Price,Rating")] Movie movie)
         {
+            //check whether the movie has any validation errors
+            //Calling this method evaluates any validation attributes that have been applied to the object.If the object has validation errors
+            //the Create method re-displays the form. If there are no errors, the method saves the new movie in the database
             if (ModelState.IsValid)
             {
                 _context.Add(movie);
@@ -71,7 +114,7 @@ namespace MvcMovie.Controllers
         }
 
         // GET: Movies/Edit/5
-        //Returns the edit razor view of the data
+        //Returns the movie data with the edit razor view
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null || _context.Movie == null)
@@ -91,8 +134,11 @@ namespace MvcMovie.Controllers
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         //The[Bind] attribute is one way to protect against over-posting.You should only include properties in the[Bind] attribute that you want to change
         [HttpPost]
+
+        //ValidateAntiForgeryToken attribute is used to prevent forgery of a request
+        //and is paired up with an anti-forgery token generated in the edit view file(Views/Movies/Edit.cshtml)
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Title,ReleaseDate,Genre,Price")] Movie movie)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Title,ReleaseDate,Genre,Price,Rating")] Movie movie)
         {
             if (id != movie.Id)
             {
