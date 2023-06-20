@@ -22,6 +22,9 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
+    //First part decides what controller to run
+    //Second part determines the action method
+    //Third part is for route data
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
