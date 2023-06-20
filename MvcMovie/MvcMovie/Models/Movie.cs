@@ -17,7 +17,9 @@ public class Movie
     //The Display attribute specifies what to display for the name of a field
     //(in this case "Release Date" instead of "ReleaseDate")
     [Display(Name = "Release Date")]
+    //Attribute makes field to just show date not time
     [DataType(DataType.Date)]
+    [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
     public DateTime ReleaseDate { get; set; }
 
     [RegularExpression(@"^[A-Z]+[a-zA-Z\s]*$")]

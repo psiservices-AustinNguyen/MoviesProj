@@ -169,6 +169,7 @@ namespace MvcMovie.Controllers
         }
 
         // GET: Movies/Delete/5
+        //doesn't delete the specified movie, it returns a view of the movie where you can submit (HttpPost) the deletion
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null || _context.Movie == null)
@@ -187,6 +188,7 @@ namespace MvcMovie.Controllers
         }
 
         // POST: Movies/Delete/5
+        //ActionName("Delete") attribute performs mapping for the routing system so that a URL that includes /Delete/ for a POST request will find the DeleteConfirmed method
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
